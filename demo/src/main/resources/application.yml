@@ -1,0 +1,9 @@
+#spring:
+#  data:
+#    mongodb:
+#      url: mongodb+srv://itsjustsohrab:9CV9hzOQn2Nqp9Ax@cluster0.p5g6q.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+#      database: journaldb
+#      auto-index-creation: true
+#
+#server:
+#  port: 8080
