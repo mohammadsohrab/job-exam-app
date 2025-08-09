@@ -165,20 +165,26 @@ const AdminDashboard = () => {
       toast.error("Authentication token not found");
       return;
     }
-      console.log('token:', localStorage.getItem('token'));
+     
 
     const response = await axiosInstance.get(`/api/admin/${jobId}/applicants`, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+       
       }
     });
     console.log("Applicants fetched successfully:", response.data);
-    const jobWithApplicants = { ...selectedJob!, applicants: response.data };
+    const jobWithApplicants = { ...selectedJob!, applicants: response.data ? response.data : []};
     setSelectedJob(jobWithApplicants);
   } catch (error) {
     console.error("Error fetching applicants:", error);
     toast.error("Failed to fetch applicants");
+
+    // Optional: set applicants to empty array so UI doesn’t break
+    if (selectedJob) {
+      setSelectedJob({ ...selectedJob, applicants: [] });
+    }
   } finally {
     setLoading(false);
   }
@@ -192,14 +198,16 @@ const AdminDashboard = () => {
       console.log('token:', localStorage.getItem('token'));
       // Replace with your actual API endpoint
     const response = await axiosInstance.patch(`/api/admin/applications/${candidateId}`,
-  { status },
+   { status },
   {
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      
     },
   }
 );
+   console.log('Selected job before update:');
       console.log('Application status updated:', response);  
 
       toast.success(`Application ${status} successfully`);
@@ -295,10 +303,10 @@ const AdminDashboard = () => {
                 <CardTitle>Personal Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {selectedApplicant.personal.profilePhoto && (
+                {selectedApplicant?.personal.profilePhoto && (
                   <div className="flex justify-center">
                     <img 
-                      src={`data:${selectedApplicant.personal.profilePhoto.type};base64,${selectedApplicant.personal.profilePhoto.data}`}
+                      src={`data:${selectedApplicant?.personal.profilePhoto.type};base64,${selectedApplicant?.personal.profilePhoto.data}`}
                       alt="Profile"
                       className="w-32 h-32 rounded-full object-cover border-4 border-border"
                     />
@@ -336,7 +344,7 @@ const AdminDashboard = () => {
                 <div>
                   <Label className="font-semibold mb-2 block">Education</Label>
                   <div className="space-y-2">
-                    {selectedApplicant.education.map((edu, index) => (
+                    {selectedApplicant?.education.map((edu, index) => (
                       <div key={index} className="p-3 bg-muted rounded-lg">
                         <p className="font-medium">{edu.degree}</p>
                         <p className="text-sm text-muted-foreground">Year: {edu.year} | Percentage: {edu.percentage}%</p>
@@ -348,7 +356,7 @@ const AdminDashboard = () => {
                 <div>
                   <Label className="font-semibold mb-2 block">Skills</Label>
                   <div className="flex flex-wrap gap-2">
-                    {selectedApplicant.skills.map((skill, index) => (
+                    {selectedApplicant?.skills.map((skill, index) => (
                       <Badge key={index} variant="secondary">
                         {skill.name} ({skill.level})
                       </Badge>
@@ -356,7 +364,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {selectedApplicant.resume && (
+                {selectedApplicant?.resume && (
                   <div>
                     <Label className="font-semibold mb-2 block">Resume</Label>
                     <Button
@@ -373,7 +381,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Status Display */}
-          {selectedApplicant.applicationStatus && selectedApplicant.applicationStatus !== 'submitted' && (
+          {selectedApplicant?.applicationStatus && selectedApplicant.applicationStatus !== 'submitted' && (
             <div className="text-center mt-6">
               <Badge 
                 variant={selectedApplicant.applicationStatus === 'accepted' ? 'default' : 'destructive'}
@@ -394,7 +402,7 @@ const AdminDashboard = () => {
               {selectedApplicant.applicationStatus === 'accepted' ? 'Already Accepted' : 'Accept Application'}
             </Button>
             <Button
-              onClick={() => updateApplicationStatus(selectedApplicant.candidateId, 'rejected')}
+              onClick={() => updateApplicationStatus(selectedApplicant.candidateId, 'rejected', selectedJob.id)}
               variant="destructive"
               disabled={loading || selectedApplicant.applicationStatus === 'rejected'|| selectedApplicant.applicationStatus === 'accepted'}
             >
@@ -421,7 +429,8 @@ const AdminDashboard = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {selectedJob.applicants?.map((applicant) => (
+            {Array.isArray(selectedJob?.applicants) &&
+               selectedJob.applicants.map((applicant) => (
               <Card key={applicant.id} className="cursor-pointer hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-4">
@@ -660,7 +669,7 @@ const AdminDashboard = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.isArray(jobs) && jobs.map((job) => (
+          {Array.isArray(jobs) && jobs?.map((job) => (
             <Card 
               key={job.id} 
               className="cursor-pointer hover:shadow-lg transition-shadow"

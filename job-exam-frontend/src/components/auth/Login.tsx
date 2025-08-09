@@ -35,10 +35,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup }) => {
    try {
       const response = await axiosInstance.post('/public/login', {
         email: formData.email,
-        password: formData.password,
-        role: 'student',
+        password: formData.password
       });
-
+      console.log("Login response:", response.data);
       const { token, fullName, role } = response.data;
 
       // Store token info

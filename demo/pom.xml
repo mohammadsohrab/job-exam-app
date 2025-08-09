@@ -13,7 +13,15 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>demo</name>
 	<description>Demo project for Spring Boot</description>
-	<url/>
+	
+ <profiles>
+        <profile>
+            <id>job-exam-app</id>
+            <properties>
+                <spring.profiles.active>job-exam-app</spring.profiles.active>
+            </properties>
+        </profile>
+    </profiles>
 	<licenses>
 		<license/>
 	</licenses>
@@ -94,6 +102,10 @@
     <scope>runtime</scope>
 </dependency>
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

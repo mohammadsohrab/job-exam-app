@@ -1,5 +1,7 @@
 package com.example.service;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -42,23 +44,21 @@ public class StudentProfileServices {
 
 	@Autowired
 	JwtUtil jwtUtil;
-	
+
 	@Autowired
 	FeedBackServices feedBackServices;
-	
+
 	@Autowired
 	JobAddRepo addRepo;
-	
+
 	@Autowired
 	Helper helper;
 
 	@Autowired
 	StudentProfileRepository studentProfileRepository;
-	
+
 	@Autowired
 	ApplicantRepo applicantRepo;
-	
-	
 
 	private static final Logger logger = LoggerFactory.getLogger(StudentProfileServices.class);
 
@@ -101,81 +101,101 @@ public class StudentProfileServices {
 		try {
 			List<JobPosting> list = addRepo.findAll();
 			System.out.println(list);
-		
-			
+
 			List<JobPostingStudentViewDTO> response = addRepo.findAllWithoutApplicantsAndAdminMail();
-			
-			logger.info("findAllWithoutApplicantsAndAdminMail  ->  response from DB  ->  "+ response);
+
+			logger.info("findAllWithoutApplicantsAndAdminMail  ->  response from DB  ->  " + response);
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
-			logger.error("findAllWithoutApplicantsAndAdminMail  ->  Error from DB  ->  "+ e);
-				
+			logger.error("findAllWithoutApplicantsAndAdminMail  ->  Error from DB  ->  " + e);
+
 		}
 
 		return null;
 	}
 
 	public ResponseEntity<String> applyToJob(ApplicantsDTO applicantDTO) {
-		
+
 		try {
-			logger.info("StudentProfileServices  ->  applyToJob  ->  ApplicantsDTO"+ applicantDTO.toString());
-			Applicants applicants =  new Applicants();
-			
+			logger.info("StudentProfileServices  ->  applyToJob  ->  ApplicantsDTO" + applicantDTO.toString());
+			Applicants applicants = new Applicants();
+
 			Optional<JobPosting> optionalJob = addRepo.findById(applicantDTO.getJobId());
-			
-			logger.info("optionalJob  --> "+ optionalJob.toString());
+
+			logger.info("optionalJob  --> " + optionalJob.toString());
 			applicants.setStatus(Status.SUBMITTED);
-			applicants.setAppliedDate(new Date(0, 0, 0));
 			applicants.setJobId(applicantDTO.getJobId());
 			applicants.setJobName(applicantDTO.getJobName());
-			
-			applicants.setStudentProfileId(applicantDTO.getStudentProfileId());
-			
-			
-			
-			if (optionalJob.isPresent()) {
-			    JobPosting jobPosting = optionalJob.get();
-			    applicants.setExamDate(jobPosting.getExamDate());
-			    Applicants saved =   applicantRepo.save(applicants);
-			    logger.info("saved --> "+saved.toString());
-			    jobPosting.setApplicants(List.of(saved));
-			    logger.info("jobPosting  -->  "+jobPosting.toString());
-			       addRepo.save(jobPosting);
-			    
-			    return new ResponseEntity<>("ok", HttpStatus.OK);
 
-			    // use jobPosting safely
+			applicants.setStudentProfileId(applicantDTO.getStudentProfileId());
+
+			if (optionalJob.isPresent()) {
+				JobPosting jobPosting = optionalJob.get();
+				applicants.setExamDate(jobPosting.getExamDate());
+				Applicants saved = applicantRepo.save(applicants);
+				logger.info("saved --> " + saved.toString());
+				List<Applicants> currentApplicants = jobPosting.getApplicants();
+
+				// Initialize if null
+				if (currentApplicants == null) {
+				    currentApplicants = new ArrayList<>();
+				}
+
+				// Add the new applicant
+				currentApplicants.add(saved);
+				// Set updated list
+				jobPosting.setApplicants(currentApplicants);
+
+				logger.info("Updated jobPosting --> " + jobPosting.toString());
+
+				// Save updated jobPosting
+				addRepo.save(jobPosting);
+
+				return new ResponseEntity<>("ok", HttpStatus.OK);
+
+				// use jobPosting safely
 			} else {
 				logger.error("else block executed.");
-			    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Job not found");
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Job not found");
 			}
 		} catch (Exception e) {
 			// TODO: handle exception
 			logger.error("Getting exception.");
-			 new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad Request. not found");
+			new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad Request. not found");
 		}
-		
+
 		return new ResponseEntity<>("Bad Request. not found", HttpStatus.BAD_REQUEST);
-		
+
 	}
 
 	public ResponseEntity<List<ApplicantsResponseDTO>> getAllApplications(String studentProfileId) {
-		
+
 		List<Applicants> applicants = applicantRepo.findByStudentProfileId(studentProfileId);
 
-		// Convert to DTO (manual or with ModelMapper/MapStruct)
-		List<ApplicantsResponseDTO> dtoList = applicants.stream()
-		    .map(a -> {
-		        ApplicantsResponseDTO dto = new ApplicantsResponseDTO();
-		        dto.setId(a.getId());
-		        dto.setJobId(a.getJobId());
-		        dto.setStatus(a.getStatus());
-		        dto.setAppliedDate(a.getAppliedDate());
-		        dto.setResult(new Date());
-		        dto.setJobName(a.getJobName());
-		        return dto;
-		    })
-		    .collect(Collectors.toList());
+		List<ApplicantsResponseDTO> dtoList = applicants.stream().map(a -> {
+			ApplicantsResponseDTO dto = new ApplicantsResponseDTO();
+			String message;
+			if (Status.SUBMITTED == a.getStatus()) {
+				message = "Application has been submitted.";
+			} else if (Status.ACCEPTED == a.getStatus()) {
+				message = "Application has been accepted.";
+			} else if (Status.REJECTED == a.getStatus()) {
+				message = "Application has been rejected.";
+			} else {
+				message = "Unknown application status.";
+			}
+			System.out.println(Status.ACCEPTED == a.getStatus());
+			System.out.println(Status.REJECTED == a.getStatus());
+			System.out.println(Status.SUBMITTED == a.getStatus());
+			dto.setId(a.getId());
+			dto.setJobId(a.getJobId());
+			dto.setStatus(a.getStatus());
+			dto.setAppliedDate(a.getAppliedDate());
+			dto.setExamDate(a.getExamDate());
+			dto.setResult(message);
+			dto.setJobName(a.getJobName());
+			return dto;
+		}).collect(Collectors.toList());
 
 		return ResponseEntity.ok(dtoList);
 
@@ -183,22 +203,18 @@ public class StudentProfileServices {
 
 	public ResponseEntity<FeedbackResponseWrapper> getAllFeedbacks(HttpServletRequest request) {
 		String email = helper.extractEmailFromRequest(request);
-	    User user = repo.findByemail(email);
+		User user = repo.findByemail(email);
 
-	    String studentId = user.getStudentProfile().getId();
+		String studentId = user.getStudentProfile().getId();
 
-	    List<FeedbackDTO> allFeedbacks = feedBackServices.getAllFeedbacks();
-	    FeedbackDTO userFeedback = feedBackServices.getFeedbackByStudentId(studentId);
+		List<FeedbackDTO> allFeedbacks = feedBackServices.getAllFeedbacks();
+		FeedbackDTO userFeedback = feedBackServices.getFeedbackByStudentId(studentId);
 
-	    FeedbackResponseWrapper response = new FeedbackResponseWrapper();
-	    response.setAllFeedbacks(allFeedbacks);
-	    response.setUserFeedback(userFeedback);
+		FeedbackResponseWrapper response = new FeedbackResponseWrapper();
+		response.setAllFeedbacks(allFeedbacks);
+		response.setUserFeedback(userFeedback);
 
-	    return ResponseEntity.ok(response);
+		return ResponseEntity.ok(response);
 	}
-	
-	
-	
-	
 
 }

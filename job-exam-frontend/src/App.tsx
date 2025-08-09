@@ -67,7 +67,7 @@ const App: React.FC = () => {
                   <Route path="news" element={<StudentNews />} />
                   <Route path="applications" element={<StudentApplications />} />
                   <Route path="feedback" element={<StudentFeedback />} />
-                  <Route path="profile" element={<StudentProfile />} />
+                  <Route path="profile" element={<StudentProfileView />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/student/news" replace />} />
               </>

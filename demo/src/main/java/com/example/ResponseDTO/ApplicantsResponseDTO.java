@@ -22,7 +22,8 @@ public class ApplicantsResponseDTO {
     private String jobId;
     private Status status;
     private Date appliedDate;
-   private Date result;
+   private String result;
     private String jobName;
+    private Date examDate;
 	
 }
