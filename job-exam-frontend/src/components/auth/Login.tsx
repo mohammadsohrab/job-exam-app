@@ -33,7 +33,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup }) => {
     setError('');
 
    try {
-      const response = await ('https://job-exam-app.onrender.com/public/login', {
+      const response = await axiosInstance.post('/public/login', {
         email: formData.email,
         password: formData.password
       });
